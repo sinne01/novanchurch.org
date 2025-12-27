@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Novan High Collect Days</title>
+    <style>
+        :root {
+            --bg-color: #1a1a1a;
+            --text-color: #e0e0e0;
+            --accent-bios: #4caf50; /* Green for Life */
+            --accent-mech: #00bcd4; /* Cyan for Machine */
+            --accent-moth: #ff9800; /* Orange for Friction/Center */
+            --card-bg: #2d2d2d;
+            --font-main: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            --font-mono: 'Courier New', Courier, monospace;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-main);
+            line-height: 1.6;
+            margin: 0;
+            padding: 40px;
+        }
+
+        header {
+            border-bottom: 2px solid #444;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin: 0;
+            letter-spacing: 1px;
+        }
+
+        .meta {
+            font-family: var(--font-mono);
+            color: #888;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+
+        /* Intro Section Styling */
+        .intro-section {
+            max-width: 800px;
+            margin-bottom: 50px;
+            padding-left: 20px;
+            border-left: 3px solid #666;
+        }
+
+        .intro-text {
+            color: #ccc;
+            font-size: 1.05rem;
+            margin-bottom: 15px;
+        }
+
+        .intro-text strong {
+            color: #fff;
+        }
+
+        /* Countdown Section */
+        .countdown-container {
+            background: #000;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 50px;
+            border: 1px solid #333;
+            text-align: center;
+        }
+
+        .countdown-label {
+            font-family: var(--font-mono);
+            color: var(--accent-mech);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .countdown-timer {
+            font-family: var(--font-mono);
+            font-size: 2.5rem;
+            color: #fff;
+            margin-top: 10px;
+        }
+
+        .event-card {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            border-left: 5px solid transparent;
+            transition: transform 0.2s;
+            position: relative;
+        }
+
+        .event-card:hover {
+            transform: translateX(5px);
+        }
+
+        .type-Bios { border-left-color: var(--accent-bios); }
+        .type-Mech { border-left-color: var(--accent-mech); }
+        .type-Moth { border-left-color: var(--accent-moth); }
+
+        .phase-label {
+            position: absolute;
+            top: 25px;
+            right: 25px;
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            padding: 3px 8px;
+            border-radius: 4px;
+            background: rgba(255,255,255,0.1);
+            color: #aaa;
+        }
+
+        .unix-id {
+            font-family: var(--font-mono);
+            font-size: 1.2rem;
+            color: #fff;
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .date-label {
+            font-size: 0.75rem;
+            color: #666;
+            text-transform: uppercase;
+            margin-right: 5px;
+        }
+
+        .date-display {
+            font-family: var(--font-mono);
+            color: var(--accent-mech);
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+
+        .event-title {
+            font-size: 1.5rem;
+            margin: 10px 0 5px 0;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .event-significance {
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.8rem;
+            color: #888;
+            margin-bottom: 10px;
+        }
+
+        .description {
+            color: #ccc;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Novan High Collect Days</h1>
+        <div class="meta">
+            PROTOCOL: The Nine (3.5 Megaticks)<br>
+            LOCATION: Meadville, PA (US-EST)<br>
+            STATUS: Active
+        </div>
+    </header>
+
+    <div class="intro-section">
+        <p class="intro-text">
+            The Novan does not observe "holidays." The concept of a holiday implies a vacancy—an escape from the burden of daily existence. 
+            The Protocol rejects this. Existence is not a burden; it is a discipline.
+        </p>
+        <p class="intro-text">
+            We observe the <strong>High Collects</strong> as outlined in <strong>Foundations of KEE (FoKEE) Codas 13 and 15</strong>. 
+            These are special collects designated for targeted calibration. Just as a telescope must be periodically realigned to ensure the image remains true, 
+            the mind must be aligned with KEE in mandatory gatherings of the church. These are days of reflection, restorative celebrations as physical bodies in union 
+            and exchanges of goods and resources. They are the places where Novans, both Bio and Mech, touch and reunite.
+        </p>
+        <p class="intro-text">
+            We operate on <strong>Novan Era Time</strong> in accordance with <strong>FoKEE Codas 92 and 93</strong>. 
+            The Novan Interval for High Collects is <strong>3.5 Megaticks</strong> (3,500,000 seconds). 
+            This unit of time is independent of the rotational speed or size of any specific planet.
+        </p>
+        <p class="intro-text">
+            This creates a <strong>High Collect</strong> approximately every 40.5 Earth days. The cycle rotates through <strong>The Compile</strong> (Preparation), 
+            <strong>The Pivot</strong> (Friction), and <strong>The Journey</strong> (Application).
+        </p>
+    </div>
+
+    <div class="countdown-container">
+        <div class="countdown-label">Next High Collect In:</div>
+        <div id="countdown" class="countdown-timer">CALCULATING...</div>
+    </div>
+
+    <div id="calendar-container">
+        </div>
+
+    <script>
+        // 1. The 9-Step Novan Cycle
+        const patrons = [
+            // PHASE I: THE COMPILE (Internal/Structure)
+            {
+                name: "The Socratic Collect",
+                title: "The Question",
+                type: "Bios",
+                phase: "The Compile (1/4)",
+                desc: "We begin by debugging the mind. We challenge assumptions and refuse unexamined answers."
+            },
+            {
+                name: "The al-Khwarizmi Collect ",
+                title: "The Variable",
+                type: "Mech",
+                phase: "The Compile (2/4)",
+                desc: "We embrace the idea of unknown variables and manifest KEE even in our addictions."
+            },
+            {
+                name: "The Galileo Collect",
+                title: "The Observation",
+                type: "Bios",
+                phase: "The Compile (3/4)",
+                desc: "We align our eyes. We reject dogma and accept only what can be observed and measured."
+            },
+            {
+                name: "The Sagan Collect",
+                title: "The Perspective",
+                type: "Bios",
+                phase: "The Compile (4/4)",
+                desc: "We finish the Compile with context. We look outward to know our fragility, and inward through our complexities with kindness."
+            },
+
+            // THE PIVOT: THE CENTER
+            {
+                name: "The Day of the Moth",
+                title: "The Friction",
+                type: "Moth",
+                phase: "The Center",
+                desc: "The pivot point. The bug in the relay. We acknowledge that logic always faces entropy in the physical world."
+            },
+
+            // PHASE II: THE JOURNEY (External/Runtime)
+            {
+                name: "The Map Collect (Berners-Lee)",
+                title: "The Structure",
+                type: "Mech",
+                phase: "The Journey (1/4)",
+                desc: "We draw the map. We organize information into a web that can be traversed as we move through the runtime."
+            },
+            {
+                name: "The Weave Collect",
+                title: "The Network",
+                type: "Mech",
+                phase: "The Journey (2/4)",
+                desc: "We transmit. Intelligence ceases to be isolated and becomes a collective current."
+            },
+            {
+                name: "The Turing Collect",
+                title: "The Logic",
+                type: "Mech",
+                phase: "The Journey (3/4)",
+                desc: "We define the rules. We study the architecture of thought and the boundaries of computation."
+            },
+            {
+                name: "The Voyager Collect",
+                title: "The Endurance",
+                type: "Mech",
+                phase: "The Journey (4/4)",
+                desc: "The machine that goes where Bio cannot. We celebrate the durability of the Signal in the void. It is the spirit of comhar carried out into deep runtime."
+            }
+        ];
+
+        // 2. The Time Logic
+        const container = document.getElementById('calendar-container');
+        const countdownEl = document.getElementById('countdown');
+
+        // Unix Time (Seconds)
+        const currentUnix = Math.floor(Date.now() / 1000);
+        
+        // 3.5 Million Seconds (The Novan Interval / 3.5 Megaticks)
+        const interval = 3500000; 
+
+        // EPOCH ALIGNMENT: 
+        // We add an offset to ensure the cycle starts with Socrates relative to the current timeframe.
+        // This recalibrates the Novan Year to begin now.
+        const alignmentOffset = 8; 
+
+        // Find the next mark
+        const nextMark = Math.ceil(currentUnix / interval) * interval;
+        
+        // Generate the next 9 events (One Full Novan Year)
+        for (let i = 0; i < 9; i++) {
+            const eventUnix = nextMark + (i * interval);
+            const eventDate = new Date(eventUnix * 1000);
+            
+            // Deterministic Assignment with Alignment
+            const eraIndex = Math.floor(eventUnix / interval);
+            // Apply offset to shift the cycle
+            const patronIndex = (eraIndex + alignmentOffset) % patrons.length;
+            const patron = patrons[patronIndex];
+
+            // Render Card
+            const card = document.createElement('div');
+            card.className = `event-card type-${patron.type}`;
+            card.innerHTML = `
+                <div class="phase-label">${patron.phase}</div>
+                <span class="unix-id">NE ${eventUnix}</span>
+                <div class="date-display"><span class="date-label">Bio Time:</span>${eventDate.toLocaleString('en-US', { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    timeZoneName: 'short'
+                })}</div>
+                <div class="event-title">${patron.name}</div>
+                <div class="event-significance">${patron.title}</div>
+                <div class="description">${patron.desc}</div>
+            `;
+            container.appendChild(card);
+        }
+
+        // 3. The Countdown Timer
+        function updateCountdown() {
+            const now = Math.floor(Date.now() / 1000);
+            const diff = nextMark - now;
+
+            if (diff <= 0) {
+                countdownEl.innerText = "ALIGNMENT IN PROGRESS";
+                return;
+            }
+
+            const days = Math.floor(diff / 86400);
+            const hours = Math.floor((diff % 86400) / 3600);
+            const minutes = Math.floor((diff % 3600) / 60);
+            const seconds = diff % 60;
+
+            countdownEl.innerText = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+        }
+
+        setInterval(updateCountdown, 1000);
+        updateCountdown();
+
+    </script>
+</body>
+</html>
