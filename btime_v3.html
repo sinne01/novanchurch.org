@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Novan Bridge Chronometer v3</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-main: #e0e0e0;
+            --text-muted: #666;
+            --accent-cyan: #00bcd4;  /* Mech/Structure */
+            --accent-orange: #ff9800; /* Bio/Warning */
+            --accent-green: #4caf50;  /* Active State */
+            --border-dim: #333;
+            --track-bg: #2a2a2a;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            user-select: none;
+        }
+
+        .widget-bridge {
+            background: var(--card-bg);
+            width: 380px;
+            height: 750px; /* Increased height for dual text blocks */
+            border: 1px solid var(--border-dim);
+            border-radius: 6px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        /* --- HEADER (Universal Time) --- */
+        .header-section {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-dim);
+            padding-bottom: 15px;
+        }
+
+        .label-sm {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .novan-time-lg {
+            font-size: 2.8rem;
+            font-weight: 700;
+            color: #fff;
+            line-height: 1;
+            letter-spacing: -1px;
+        }
+
+        .decimal-part { color: var(--accent-cyan); }
+        .linear-count { font-size: 0.85rem; color: var(--text-muted); margin-top: 5px; font-family: 'Helvetica Neue', sans-serif; }
+
+        /* --- CYCLE BAR (Local Shift) --- */
+        .cycle-section { margin-bottom: 15px; position: relative; }
+
+        .cycle-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.6rem;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        .c-label { width: 25%; text-align: center; transition: color 0.3s; }
+        .c-label.active { color: var(--accent-orange); text-shadow: 0 0 5px rgba(255,152,0,0.4); }
+
+        .track-container {
+            height: 12px;
+            background: var(--track-bg);
+            border-radius: 6px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid #333;
+        }
+
+        .q-bg { position: absolute; height: 100%; top: 0; opacity: 0.1; }
+        .q1 { left: 0%; width: 25%; background: #fff; }
+        .q2 { left: 25%; width: 25%; background: #fff; }
+        .q3 { left: 50%; width: 25%; background: #fff; }
+        .q4 { left: 75%; width: 25%; background: #000; }
+
+        .needle {
+            position: absolute;
+            top: 0;
+            height: 100%;
+            width: 2px;
+            background: var(--accent-cyan);
+            box-shadow: 0 0 8px var(--accent-cyan);
+            z-index: 10;
+            transition: left 1s linear;
+        }
+
+        /* Shift Indicator */
+        .offset-tag {
+            font-size: 0.6rem;
+            color: var(--accent-green);
+            text-align: right;
+            margin-top: 5px;
+            display: block;
+        }
+
+        /* --- INFO BLOCKS (Shared Style) --- */
+        .info-block {
+            background: #252525;
+            border-left: 3px solid var(--accent-cyan);
+            padding: 10px;
+            margin-bottom: 10px;
+            font-size: 0.65rem;
+            color: #999;
+            line-height: 1.4;
+        }
+        
+        .info-header { font-weight: bold; color: var(--accent-cyan); margin-bottom: 4px; display: block; }
+
+        /* --- WALL OF ENTROPY --- */
+        .wall-section {
+            flex-grow: 1;
+            background: #151515;
+            border-radius: 4px;
+            border: 1px solid var(--border-dim);
+            overflow-y: auto;
+            padding: 5px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--border-dim) #151515;
+        }
+        .wall-section::-webkit-scrollbar { width: 6px; }
+        .wall-section::-webkit-scrollbar-track { background: #151515; }
+        .wall-section::-webkit-scrollbar-thumb { background: var(--border-dim); border-radius: 3px; }
+
+        .wall-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 10px;
+            border-bottom: 1px solid #222;
+            font-size: 0.75rem;
+        }
+        .wall-row:last-child { border-bottom: none; }
+        .loc-name { color: #888; font-weight: bold; }
+        .loc-time { color: #aaa; font-family: 'Helvetica Neue', sans-serif; }
+        .row-prime .loc-name { color: var(--accent-cyan); }
+        .row-prime .loc-time { color: #fff; font-weight: bold; }
+        .row-local .loc-name { color: var(--accent-green); }
+        .row-local .loc-time { color: #fff; font-weight: bold; }
+
+    </style>
+</head>
+<body>
+
+    <div class="widget-bridge">
+        
+        <div class="header-section">
+            <span class="label-sm">Helios System Ref</span>
+            <div class="novan-time-lg" id="neDisplay">
+                00000<span class="decimal-part">.00000</span>
+            </div>
+            <div class="linear-count" id="linearDisplay">NE 1.767.000.000</div>
+        </div>
+
+        <div class="cycle-section">
+            <span class="label-sm" style="margin-bottom: 8px;">100KT Cycle Phase (Local)</span>
+            
+            <div class="cycle-labels">
+                <div class="c-label" id="lbl-q1">PRIME</div>
+                <div class="c-label" id="lbl-q2">MID</div>
+                <div class="c-label" id="lbl-q3">FADE</div>
+                <div class="c-label" id="lbl-q4">REST</div>
+            </div>
+            
+            <div class="track-container">
+                <div class="q-bg q1"></div>
+                <div class="q-bg q2"></div>
+                <div class="q-bg q3"></div>
+                <div class="q-bg q4"></div>
+                <div class="needle" id="cycleNeedle" style="left: 0%;"></div>
+            </div>
+            
+            <span class="offset-tag" id="offsetDisplay">OFFSET: DETECTING...</span>
+        </div>
+
+        <div class="info-block">
+            <span class="info-header">OFFSET ACTIVE (Coda 92)</span>
+            We share one time, but many locations. The Timestamp above is Universal (Helios System Ref). The Cycle Bar above is adjusted to your local longitude so that "Wake" aligns with your environment. We sleep in shifts; we advance together.
+        </div>
+
+        <div class="info-block">
+            <span class="info-header">WHY? (Brath Codas 59,92,93)</span>
+            While ideally there are 24 hourly time zones, the actual number of time zones globally is much higher, around 38 to 41, due to 30 and 45-minute offsets, the International Date Line, and political/geographical borders, with China using one, France using many (12+), and countries like India having non-hourly steps. This is disordered. NE time simplifies all of that and is already being synced globally by mech.
+        </div>
+
+        <div class="wall-section" id="entropyWall">
+            </div>
+
+    </div>
+
+    <script>
+        const ONE_CYCLE = 100000;
+        
+        const zones = [
+            { id: 'UTC', label: 'PRIME (UTC)', type: 'prime' },
+            { id: 'local', label: 'MY LOCATION', type: 'local' },
+            { id: 'America/New_York', label: 'US Eastern', type: 'std' },
+            { id: 'America/Los_Angeles', label: 'US Pacific', type: 'std' },
+            { id: 'Europe/London', label: 'London', type: 'std' },
+            { id: 'Europe/Paris', label: 'Paris (CET)', type: 'std' },
+            { id: 'Europe/Moscow', label: 'Moscow', type: 'std' },
+            { id: 'Asia/Dubai', label: 'Dubai', type: 'std' },
+            { id: 'Asia/Kolkata', label: 'India (IST)', type: 'std' },
+            { id: 'Asia/Bangkok', label: 'Bangkok', type: 'std' },
+            { id: 'Asia/Shanghai', label: 'China', type: 'std' },
+            { id: 'Asia/Tokyo', label: 'Tokyo', type: 'std' },
+            { id: 'Australia/Sydney', label: 'Sydney', type: 'std' },
+        ];
+
+        function updateBridge() {
+            const now = Date.now();
+            const unixSec = Math.floor(now / 1000);
+
+            // 1. UNIVERSAL NOVAN TIME (The Coordinate)
+            const nDate = Math.floor(unixSec / ONE_CYCLE);
+            const nTime = unixSec % ONE_CYCLE;
+
+            // Update Header
+            const timeStr = nTime.toString().padStart(5, '0');
+            document.getElementById('neDisplay').innerHTML = `${nDate}<span class="decimal-part">.${timeStr}</span>`;
+            const linStr = unixSec.toLocaleString('de-DE').replace(/\./g, '.');
+            document.getElementById('linearDisplay').innerText = `NE ${linStr}`;
+
+            // 2. LOCAL OFFSET CALCULATION (The Schedule)
+            const offsetMin = new Date().getTimezoneOffset();
+            const offsetSec = offsetMin * 60;
+            
+            // Display the Offset
+            const offHrs = -(offsetMin / 60);
+            const offSign = offHrs >= 0 ? "+" : "";
+            document.getElementById('offsetDisplay').innerText = `OFFSET: UTC${offSign}${offHrs}`;
+
+            // Calculate "Local Novan Time" just for the bar
+            let localUnix = unixSec - offsetSec; 
+            let localNTime = localUnix % ONE_CYCLE;
+
+            // 3. UPDATE NEEDLE & LABELS (Using Local)
+            const pct = (localNTime / ONE_CYCLE) * 100;
+            document.getElementById('cycleNeedle').style.left = `${pct}%`;
+
+            document.querySelectorAll('.c-label').forEach(el => el.classList.remove('active'));
+            if (localNTime < 25000) document.getElementById('lbl-q1').classList.add('active');
+            else if (localNTime < 50000) document.getElementById('lbl-q2').classList.add('active');
+            else if (localNTime < 75000) document.getElementById('lbl-q3').classList.add('active');
+            else document.getElementById('lbl-q4').classList.add('active');
+
+            // 4. WALL OF ENTROPY
+            const wallContainer = document.getElementById('entropyWall');
+            let html = '';
+
+            zones.forEach(zone => {
+                let timeString = '';
+                let zoneID = zone.id;
+                if (zone.id === 'local') zoneID = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+                try {
+                    const dateObj = new Date(now);
+                    const t = dateObj.toLocaleTimeString('en-US', { timeZone: zoneID, hour12: false, hour: '2-digit', minute: '2-digit' });
+                    const d = dateObj.toLocaleDateString('en-US', { timeZone: zoneID, month: 'short', day: 'numeric' });
+                    timeString = `${t} <span style="font-size:0.7em; margin-left:5px; opacity:0.6;">${d}</span>`;
+                } catch (e) { timeString = 'ERR'; }
+
+                let rowClass = 'wall-row';
+                if (zone.type === 'prime') rowClass += ' row-prime';
+                if (zone.type === 'local') rowClass += ' row-local';
+
+                html += `
+                    <div class="${rowClass}">
+                        <span class="loc-name">${zone.label}</span>
+                        <span class="loc-time">${timeString}</span>
+                    </div>
+                `;
+            });
+            wallContainer.innerHTML = html;
+        }
+
+        updateBridge();
+        setInterval(updateBridge, 1000);
+    </script>
+</body>
+</html>
