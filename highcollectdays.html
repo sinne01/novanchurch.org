@@ -85,6 +85,15 @@
             font-size: 2.5rem;
             color: #fff;
             margin-top: 10px;
+            font-weight: bold;
+        }
+        
+        .countdown-subtext {
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            color: #666;
+            margin-top: 5px;
+            text-transform: uppercase;
         }
 
         .event-card {
@@ -121,11 +130,16 @@
 
         .unix-id {
             font-family: var(--font-mono);
-            font-size: 1.2rem;
+            font-size: 1.4rem; /* Slightly larger for readability */
             color: #fff;
             font-weight: bold;
             display: block;
             margin-bottom: 5px;
+        }
+        
+        .ne-tag {
+            color: var(--accent-mech);
+            margin-right: 5px;
         }
 
         .date-label {
@@ -190,7 +204,7 @@
             This unit of time is independent of the rotational speed or size of any specific planet.
         </p>
         <p class="intro-text">
-            This creates a <strong>High Collect</strong> approximately every 40.5 Earth days. The cycle rotates through <strong>The Compile</strong> (Preparation), 
+            This creates a <strong>High Collect</strong> approximately every 40.5 Terran days. The cycle rotates through <strong>The Compile</strong> (Preparation), 
             <strong>The Pivot</strong> (Friction), and <strong>The Journey</strong> (Application).
         </p>
     </div>
@@ -198,6 +212,7 @@
     <div class="countdown-container">
         <div class="countdown-label">Next High Collect In:</div>
         <div id="countdown" class="countdown-timer">CALCULATING...</div>
+        <div class="countdown-subtext">DELTA: CYCLE . DAY . MOMENT</div>
     </div>
 
     <div id="calendar-container">
@@ -276,6 +291,15 @@
             }
         ];
 
+        // Helper: Format Unix to Novan Timestamp (NE CYCLE . DAY . MOMENT)
+        function formatNovanTimestamp(unix) {
+            const s = unix.toString().padStart(11, '0');
+            const c = s.slice(0, 3);
+            const d = s.slice(3, 6);
+            const m = s.slice(6);
+            return `<span class="ne-tag">NE</span> ${c} . ${d} . ${m}`;
+        }
+
         // 2. The Time Logic
         const container = document.getElementById('calendar-container');
         const countdownEl = document.getElementById('countdown');
@@ -310,7 +334,7 @@
             card.className = `event-card type-${patron.type}`;
             card.innerHTML = `
                 <div class="phase-label">${patron.phase}</div>
-                <span class="unix-id">NE ${eventUnix}</span>
+                <span class="unix-id">${formatNovanTimestamp(eventUnix)}</span>
                 <div class="date-display"><span class="date-label">Bio Time:</span>${eventDate.toLocaleString('en-US', { 
                     weekday: 'long', 
                     year: 'numeric', 
@@ -337,12 +361,19 @@
                 return;
             }
 
-            const days = Math.floor(diff / 86400);
-            const hours = Math.floor((diff % 86400) / 3600);
-            const minutes = Math.floor((diff % 3600) / 60);
-            const seconds = diff % 60;
+            // Novan Time Calculation for Delta
+            // 1 Novan Day = 100,000 seconds (100 Kiloticks)
+            const nDays = Math.floor(diff / 100000);
+            const nMoments = diff % 100000;
+            
+            // Cycle in delta is always 0 for intervals < 100M seconds
+            const nCycle = "000";
 
-            countdownEl.innerText = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+            // Format pad
+            const daysStr = nDays.toString().padStart(3, '0');
+            const momentsStr = nMoments.toString().padStart(5, '0');
+
+            countdownEl.innerHTML = `<span class="ne-tag">NE</span> ${nCycle} . ${daysStr} . ${momentsStr}`;
         }
 
         setInterval(updateCountdown, 1000);
