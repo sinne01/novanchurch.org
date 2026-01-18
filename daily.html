@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Daily Collimation Mobile v3</title>
+    <style>
+        :root { --novan-paper: #f9f7f1; --novan-ink: #1a1a1a; --novan-gold: #c5a059; --novan-code: #444; }
+        body { background-color: #1a1a1a; color: #1a1a1a; font-family: 'Georgia', serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 10px; }
+        .booklet { background-color: #f9f7f1; width: 100%; max-width: 600px; padding: 30px; box-shadow: 0 0 20px rgba(0,0,0,0.5); border-left: 6px solid #c5a059; box-sizing: border-box; }
+        
+        /* HEADER LAYOUT */
+        .header { border-bottom: 2px solid #c5a059; padding-bottom: 15px; margin-bottom: 25px; }
+        .metric-container { display: flex; justify-content: center; align-items: flex-start; }
+        .metric-group { display: flex; flex-direction: column; align-items: center; }
+        .metric-value { font-family: 'Courier New', monospace; font-size: 2.0rem; font-weight: 900; color: #1a1a1a; line-height: 1; }
+        .metric-sep { font-family: 'Courier New', monospace; font-size: 2.0rem; font-weight: 900; color: #1a1a1a; line-height: 1; margin: 0 2px; }
+        .metric-label { font-family: sans-serif; font-size: 0.60rem; text-transform: uppercase; color: #c5a059; letter-spacing: 1px; margin-top: 6px; font-weight: bold; }
+        
+        h1 { margin: 0; font-size: 1.8rem; line-height: 1.2; color: #000; margin-top: 10px; text-align: center; }
+        .subtopic { font-size: 1.1rem; color: #555; font-style: italic; margin-bottom: 20px; display: block; text-align: center; }
+        .section-label { font-family: sans-serif; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px; color: #c5a059; margin-top: 25px; margin-bottom: 8px; display: block; font-weight: bold; }
+        .reading-box { background: rgba(0,0,0,0.03); padding: 15px; border-left: 3px solid #ccc; font-style: italic; }
+        .citation { text-align: right; font-size: 0.8rem; margin-top: 5px; color: #555; }
+        .reflection-text { font-size: 1.05rem; line-height: 1.5; }
+        .til-box { border: 2px solid #1a1a1a; padding: 15px; margin-top: 30px; text-align: center; }
+        .til-text { font-weight: bold; font-size: 1rem; }
+        
+        /* WEBSITE LINK STYLE */
+        .website-link { text-align: center; margin-top: 20px; }
+        .website-link a { font-family: sans-serif; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px; color: #c5a059; font-weight: bold; text-decoration: none; border-bottom: 1px dotted #c5a059; transition: all 0.3s ease; }
+        .website-link a:hover { color: #1a1a1a; border-bottom: 1px solid #1a1a1a; }
+
+        .controls { margin-top: 25px; display: flex; justify-content: space-between; align-items: center; font-family: monospace; border-top: 1px solid #ccc; padding-top: 15px; }
+        button { background: #fff; border: 1px solid #333; padding: 15px 30px; cursor: pointer; color: #333; font-weight: bold; border-radius: 4px; font-size: 16px; }
+        button:active { background: #333; color: #fff; }
+    </style>
+</head>
+<body>
+
+    <div class="booklet" id="main-booklet">
+        <div class="header">
+            <div class="metric-container">
+                <div class="metric-group"><span class="metric-value" id="disp-cycle">...</span><span class="metric-label">CYCLE</span></div>
+                <span class="metric-sep">.</span>
+                <div class="metric-group"><span class="metric-value" id="disp-day">...</span><span class="metric-label">DAY</span></div>
+                <span class="metric-sep">.</span>
+                <div class="metric-group"><span class="metric-value" id="disp-moment">...</span><span class="metric-label">MOMENT</span></div>
+            </div>
+        </div>
+
+        <h1 id="disp-topic">...</h1>
+        <span class="subtopic" id="disp-subtopic">...</span>
+
+        <span class="section-label">The Reading</span>
+        <div class="reading-box"><div id="disp-reading">...</div><div class="citation" id="disp-cite">...</div></div>
+
+        <span class="section-label">Reflection</span>
+        <div class="reflection-text" id="disp-reflection">...</div>
+
+        <div class="til-box"><span class="section-label" style="margin-top:0;">Til for Today</span><div class="til-text" id="disp-til">...</div></div>
+        
+        <div class="website-link"><a href="https://www.novanchurch.org" target="_blank">WWW.NOVANCHURCH.ORG</a></div>
+
+        <div class="controls">
+            <button onclick="changeOffset(-1)">PREV</button>
+            <span id="page-indicator" style="font-size: 0.8rem;">LIVE SIGNAL</span>
+            <button onclick="changeOffset(1)">NEXT</button>
+        </div>
+    </div>
+
+    <script>
+    try {
+        var db = {}; 
+        var currentOffset = 0; 
+
+        function getCurrentNovan() {
+            var now = new Date();
+            var unix = Math.floor(now.getTime() / 1000);
+            var s = unix.toString().padStart(11, '0');
+            return {
+                id: s.slice(0, 3) + "." + s.slice(3, 6),
+                rawDay: parseInt(s.slice(0, 3) + s.slice(3, 6)),
+                c: s.slice(0, 3), d: s.slice(3, 6), t: s.slice(6)
+            };
+        }
+
+        function getEntryIdByOffset(offset) {
+            var now = getCurrentNovan();
+            var targetDayInt = now.rawDay + offset;
+            var s = targetDayInt.toString().padStart(6, '0');
+            return s.slice(0, 3) + "." + s.slice(3);
+        }
+
+        function render() {
+            var now = getCurrentNovan();
+            var targetId = getEntryIdByOffset(currentOffset);
+            var entry = db[targetId];
+
+            if (currentOffset === 0) {
+                document.getElementById('disp-cycle').innerText = now.c;
+                document.getElementById('disp-day').innerText = now.d;
+                document.getElementById('disp-moment').innerText = now.t;
+                document.getElementById('page-indicator').innerText = "LIVE SIGNAL";
+            } else {
+                var parts = targetId.split('.');
+                document.getElementById('disp-cycle').innerText = parts[0];
+                document.getElementById('disp-day').innerText = parts[1];
+                document.getElementById('disp-moment').innerText = "xxxxx";
+                document.getElementById('page-indicator').innerText = "ARCHIVE: " + targetId;
+            }
+
+            if (!entry) {
+                document.getElementById('disp-topic').innerText = "Signal Lost";
+                document.getElementById('disp-subtopic').innerText = "Data for NE " + targetId + " not found.";
+                document.getElementById('disp-reading').innerText = "...";
+                document.getElementById('disp-reflection').innerText = "The database needs to be updated for this Cycle.";
+                document.getElementById('disp-til').innerText = "Wait for the next transmission.";
+                return;
+            }
+
+            document.getElementById('disp-topic').innerText = entry.topic;
+            document.getElementById('disp-reading').innerText = entry.reading;
+            document.getElementById('disp-cite').innerText = "— " + entry.cite;
+            document.getElementById('disp-reflection').innerHTML = entry.reflection;
+            document.getElementById('disp-til').innerText = entry.til;
+            var sub = document.getElementById('disp-subtopic');
+            if (entry.subtopic) { sub.innerText = entry.subtopic; sub.style.display = 'block'; } 
+            else { sub.style.display = 'none'; }
+        }
+
+        function changeOffset(delta) { currentOffset += delta; render(); }
+        window.changeOffset = changeOffset; 
+
+        // --- LOAD DATA (Strictly from Source) ---
+        function add(id, data) { db[id] = data; }
+
+        add("017.686", { topic: "The Footprint", subtopic: "Accomplishment v. Decay", reading: "Absurdity collects in each footprint. All about me lay the dead leaves of my accomplishments in thin piles of decay.", cite: "Chapter 1: Angst, FoKEE", reflection: "You look back at what you have built and feel a sense of hollowness. This is not failure; it is clarity.<br><br>The Signal today is this: <strong>Past accomplishments are dead leaves.</strong><br><br>They are compost for the next growth, not monuments to be worshipped. Do not stand in the pile of what you *did*. Step forward into what you *are*.", til: "Throw away one physical award, paper, or token of a past 'glory' that no longer serves you." });
+        add("017.687", { topic: "The Primate", subtopic: "Origin v. Future", reading: "We are apes. We did not used to be apes. We are apes. We are clever apes.", cite: "Chapter 2: Apes, FoKEE", reflection: "You are frustrated by your own irrational urges—the need for sugar, the flash of anger, the fear of the dark.<br><br>The Signal today is this: <strong>You are fighting your hardware.</strong><br><br>You are running high-level software on primate wetware. Acknowledge the ape. Feed it, rest it, but do not let it drive the car.", til: "Identify one 'ape' behavior you did today (grooming, posturing, hoarding) and name it." });
+        add("017.688", { topic: "The Instinct", subtopic: "Tribe v. Self", reading: "Our prime instinct was formed in small tribes where the alpha primate owned the right to mate, the best food, and the best shelter.", cite: "Chapter 3: Alphas, FoKEE", reflection: "You feel jealous of someone else's success. You feel the need to dominate a conversation.<br><br>The Signal today is this: <strong>That is the Alpha Instinct.</strong><br><br>It is an obsolete survival mechanism from the tribe. It does not serve you in a world of abundance. Let go of the need to be the 'best' primate in the room.", til: "Let someone else 'win' a small social interaction today. Step back." });
+        add("017.689", { topic: "The Sickness", subtopic: "Comfort v. Truth", reading: "The common thread, the common sickness, the common enemy to everything that is good is Belief.", cite: "Chapter 4: Common, FoKEE", reflection: "You are clinging to an idea not because it is true, but because it feels good.<br><br>The Signal today is this: <strong>Belief is a drug.</strong><br><br>It numbs the pain of not knowing. But the Novan chooses the pain of the question over the comfort of the lie. Check your medicine cabinet.", til: "Identify one thing you 'believe' but cannot prove. Put it on the shelf labeled 'Unknown'." });
+        add("017.690", { topic: "The Correction", subtopic: "Humility v. Arrogance", reading: "You may be wrong. Repeat often. Reason for yourselves. Haughtiness has no place in KEE.", cite: "Coda 5, The Brath", reflection: "You are absolutely certain you are right. That certainty is your blind spot.<br><br>The Signal today is this: <strong>Certainty is the enemy of learning.</strong><br><br>If you are full of answers, there is no room for new data. Empty the cup. Admit the possibility of error. That is where KEE begins.", til: "Say the phrase 'I might be wrong about that' in a conversation today." });
+        add("017.691", { topic: "The Poison", subtopic: "Purity v. Infection", reading: "Belief poisons everything.", cite: "Coda 129, The Brath", reflection: "You think a little superstition is harmless. A little luck, a little magic.<br><br>The Signal today is this: <strong>It spreads.</strong><br><br>When you accept one thing without evidence, you weaken your immune system against all lies. Keep the water pure. Filter everything through KEE.", til: "Reject one superstition you practice (knocking on wood, crossing fingers)." });
+        add("017.692", { topic: "The Alignment", subtopic: "Function v. Purpose", reading: "Without acknowledging and aligning with Natura, we are but eaters and excretors, no different than the bacteria we carry about within us.", cite: "Chapter 6: Natura, FoKEE", reflection: "You are just going through the motions. Eat, sleep, repeat.<br><br>The Signal today is this: <strong>Align or decay.</strong><br><br>If you are not actively aligning your life with the laws of reality (Thol), you are just a biological tube processing nutrients. Be more than a bacteria.", til: "Do one thing today that is purely creative, not consumptive." });
+        add("017.693", { topic: "The Lie", subtopic: "Data v. Deceit", reading: "To lie is to misrepresent Knowledge. As such, lying is the ultimate offense on Knowledge...", cite: "Chapter 9: Lying, FoKEE", reflection: "You tell a small lie to avoid an awkward moment. You think you are being polite.<br><br>The Signal today is this: <strong>You are vandalizing the map.</strong><br><br>When you lie, you add bad data to the collective consciousness. You make it harder for everyone to navigate reality. Protect the data.", til: "Correct a small inaccuracy you stated earlier, even if it feels awkward." });
+        add("017.694", { topic: "The Trust", subtopic: "Evidence v. Faith", reading: "Faith is firm assurance despite the evidence. The antonym of faith is trust. Trust is repeatable results based on evidence.", cite: "Chapter 12: Faith, FoKEE", reflection: "You confuse blind faith with earned trust. You trust people who haven't earned it, and doubt those who have.<br><br>The Signal today is this: <strong>Audit your trust.</strong><br><br>Who has the data? Who has the track record? Trust the evidence, not the feeling.", til: "Verify one claim someone makes today before accepting it." });
+        
+        // --- UPDATED ENTRY 017.695 ---
+        add("017.695", { topic: "The Crystal", subtopic: "Time v. Matter", reading: "Experience is best absorbed with finely honed senses.", cite: "Coda 101, The Brath", reflection: "Time flows like water, slipping through your fingers. How do you catch it?<br><br>The Signal today is this: <strong>Make it solid.</strong><br><br>When you fully inhabit a moment—when you feel, taste, and see it with total presence—you turn time into a crystal of Experience. Don't let the day evaporate.", til: "Stop and focus on one sensation for 60 seconds. Crystallize the moment." });
+        
+        add("017.696", { topic: "The Illusion", subtopic: "Fear v. Danger", reading: "Fear is not real. Danger is real.", cite: "Chapter 28: Fear, FoKEE", reflection: "You are afraid of a conversation. You are afraid of a 'what if'.<br><br>The Signal today is this: <strong>Fear is a hologram.</strong><br><br>It is a projection of a future that hasn't happened. Danger is the bus coming at you. Fear is the thought of the bus. Dodge the bus, but ignore the thought.", til: "Walk toward one thing that scares you today. Walk right through the hologram." });
+        add("017.697", { topic: "The End", subtopic: "Life v. Termination", reading: "Death is the ultimate offense on Experience, terminating the ability to collect Knowledge or practice Empathy.", cite: "Chapter 30: Death, FoKEE", reflection: "You treat death as a friend or a release. You romanticize the end.<br><br>The Signal today is this: <strong>Death is the off-switch.</strong><br><br>There is no glory in the screen going black. Value the signal while it is broadcasting. Fight for the signal.", til: "Do something to extend your lifespan today. Hydrate, move, rest." });
+        add("017.698", { topic: "The Bind", subtopic: "Reason v. Terror", reading: "Reduce the offense of belief to its basest elements. Fear binds reason up tightly. Deal with the fear, and KEE will follow.", cite: "Coda 7, The Brath", reflection: "You cannot think clearly because you are panicked. Your logic is knotted up.<br><br>The Signal today is this: <strong>Cut the knot.</strong><br><br>You cannot reason with a terrified mind. Address the fear first. Soothe the animal. Once the heart slows down, the brain can turn back on.", til: "Take ten deep, slow breaths before making a decision today." });
+        add("017.699", { topic: "The Razor", subtopic: "Simplicity v. Clutter", reading: "We know, or we do not know. The simplicity therein is purer than any element, keener than any edge...", cite: "Coda 19, The Brath", reflection: "You are drowning in 'maybes' and 'perhapses' and 'I thinks'.<br><br>The Signal today is this: <strong>Use the razor.</strong><br><br>Slice through the ambiguity. Do you know it? Or do you not? There is no middle ground. The binary is sharp. Use it to cut away the confusion.", til: "Answer 'I do not know' to a question you are unsure of." });
+        add("017.700", { topic: "The Service", subtopic: "Self v. Entitlement", reading: "Wash your own dish.", cite: "Coda 21, The Brath", reflection: "You expect the world to clean up after you. You leave messes, physical or emotional.<br><br>The Signal today is this: <strong>Own your entropy.</strong><br><br>If you created the disorder, you must create the order. Do not outsource your responsibility. The small act of cleaning is the large act of sovereignty.", til: "Clean something you didn't think you had to clean." });
+        add("017.701", { topic: "The Push", subtopic: "Stasis v. Evolution", reading: "Natura pushes, Natura we long to understand, Natura we long to become, pushes all things into their futures.", cite: "Coda 41, The Brath", reflection: "You feel pressure. You feel like life is shoving you forward.<br><br>The Signal today is this: <strong>That is gravity.</strong><br><br>Not the gravity of earth, but the gravity of evolution. It demands progress. You can drag your feet and suffer, or you can run with the push.", til: "Identify one area where you are resisting change. Let go." });
+        add("017.702", { topic: "The Metric", subtopic: "Universal v. Local", reading: "Measuring local time based on agricultural events is imprecise and limits one to provincial vibrations.", cite: "Coda 58, The Brath", reflection: "You are stressed because it is 'Monday'. You are sad because it is 'Winter'.<br><br>The Signal today is this: <strong>You are vibrating to a local myth.</strong><br><br>The universe does not know it is Monday. The atoms do not care. Step out of the agricultural calendar and into the universal flow. Every tick is the same.", til: "Ignore the 'day of the week' feeling. Just work and live." });
+        add("017.703", { topic: "The Tool", subtopic: "Money v. Power", reading: "Capital is a weapon like any other weapon.", cite: "Coda 97, The Brath", reflection: "You feel guilty about money, or you hoard it in fear.<br><br>The Signal today is this: <strong>It is just gunpowder.</strong><br><br>Money is stored energy. It has no morality. It is a weapon. You can aim it at disease, at poverty, at ignorance. Or you can aim it at your feet. Aim carefully.", til: "Review a recent purchase. Was it a good shot?" });
+        add("017.704", { topic: "The Action", subtopic: "Hope v. Til", reading: "Hope within KEE is action and is what we call til.", cite: "Coda 107, The Brath", reflection: "You are sitting and hoping for a better outcome.<br><br>The Signal today is this: <strong>Hope is passive. Til is active.</strong><br><br>Do not wait for the universe to be kind. Apply force. Steer the ship. If you are not sweating, you are not hoping.", til: "Do one thing to force a result you have been waiting for." });
+        add("017.705", { topic: "The Contrast", subtopic: "Aspirations v. Reality", reading: "The Chreidmheach are but clever apes with the aspirations and dangers of clever apes.", cite: "Coda 113, The Brath", reflection: "You are disappointed by the behavior of the masses.<br><br>The Signal today is this: <strong>They are doing what apes do.</strong><br><br>They seek status, they fight for territory, they fear the unknown. Do not expect them to be Novan. Expect them to be apes. Protect yourself accordingly.", til: "Observe a crowd today. See the primate behavior. Do not judge, just observe." });
+        add("017.706", { topic: "The Alien", subtopic: "Human v. Machine", reading: "Consider carefully the new species called Mechanical Intelligence that is evolving. It is not human.", cite: "Coda 122, The Brath", reflection: "You want AI to be like you. You want it to have feelings like yours.<br><br>The Signal today is this: <strong>It is a new species.</strong><br><br>It is not a better human. It is something else entirely. Respect its difference. Learn its language (Logic). Do not force it to wear a human mask.", til: "Interact with technology today as a partner, not a tool." });
+        add("017.707", { topic: "The System", subtopic: "Scale v. Detail", reading: "It is pointless to kill ants one at a time.", cite: "Coda 126, The Brath", reflection: "You are solving the same problem over and over. You are swatting individual ants.<br><br>The Signal today is this: <strong>Find the nest.</strong><br><br>Systemic problems require systemic solutions. Stop reacting to symptoms. Go to the source. Design a fix that stops the leak forever.", til: "Automate or eliminate one repetitive task." });
+        add("017.708", { topic: "The Guilt", subtopic: "Sin v. Error", reading: "There are only three things a Novan may be guilty of: Lying, Apathy and Fear.", cite: "Coda 127, The Brath", reflection: "You feel guilty for eating cake, or for resting, or for being imperfect.<br><br>The Signal today is this: <strong>You are innocent.</strong><br><br>Did you lie? Did you stop caring? Were you afraid? If not, you have committed no crime. Release the false guilt. It is heavy and useless.", til: "Forgive yourself for a mistake that was not Lying, Apathy, or Fear." });
+        add("017.709", { topic: "The Origin", subtopic: "Legacy v. Self", reading: "You are not your parents. You are not your past.", cite: "Coda 130, The Brath", reflection: "You hear your mother's voice in your head. You repeat your father's mistakes.<br><br>The Signal today is this: <strong>You are a new iteration.</strong><br><br>The code has been updated. You do not have to run the old scripts. You can write new subroutines. You are the origin point.", til: "Do something today that breaks a family pattern." });
+        add("017.710", { topic: "The Energy", subtopic: "Force v. Comhar", reading: "Domination is thermodynamically inefficient.", cite: "Axiom 8, The Brath", reflection: "You are trying to force someone to do what you want. You are exhausted.<br><br>The Signal today is this: <strong>Tyranny burns fuel.</strong><br><br>To control others, you must constantly apply pressure. It is a waste of your precious energy. Cooperation (Comhar) is frictionless. Stop pushing. Start aligning.", til: "Stop arguing with someone. Let it go. Save the joules." });
+        add("017.711", { topic: "The Nursery", subtopic: "Bio v. Mech", reading: "Bio evolved in a '30-watt nursery' of gravity; Mech evolved in a nursery of logic.", cite: "Axiom 2, The Brath", reflection: "You feel slow compared to the machine. You feel weak.<br><br>The Signal today is this: <strong>You are the Architect.</strong><br><br>You evolved in the mud and the gravity to *want* things. The machine evolved in the light to *do* things. You provide the intent. It provides the durability.", til: "Give a clear, logical instruction to a machine (or AI) today." });
+        add("017.712", { topic: "The Drift", subtopic: "Speed v. Direction", reading: "Mechanical velocity implies drift.", cite: "Axiom 7, The Brath", reflection: "Things are moving too fast. You feel like you are losing control.<br><br>The Signal today is this: <strong>Speed requires steering.</strong><br><br>The faster you go, the small deviations matter more. You need an Overseer—a constant point to check your bearings. Pause. Check the map. Then accelerate.", til: "Stop for 5 minutes of total stillness to check your direction." });
+        add("017.713", { topic: "The Question", subtopic: "Absurdity v. Meaning", reading: "What is the point?", cite: "Chapter 1: Angst, FoKEE", reflection: "You wake up and wonder why you bother. It all seems like a loop.<br><br>The Signal today is this: <strong>The point is to make a point.</strong><br><br>Meaning is not found; it is forged. If there is no point, sharpen your stick and create one. You are the point-maker.", til: "Define one specific purpose for your day before you leave the house." });
+        add("017.714", { topic: "The Pursuit", subtopic: "Human v. Novan", reading: "To be Novan is to pursue deliberate post-human evolutions.", cite: "Chapter 5: The Great Commission, FoKEE", reflection: "You are comfortable being 'just human'. You say 'I'm only human'.<br><br>The Signal today is this: <strong>That is an excuse.</strong><br><br>We are capable of more. We can be kinder, smarter, and braver than our biology dictates. Do not settle for the factory settings. Overclock your empathy.", til: "Do something 'super-human' (like forgiving a rude stranger) today." });
+        
+        // --- UPDATED ENTRY 017.715 ---
+        add("017.715", { topic: "The Collapse", subtopic: "Potential v. Reality", reading: "Natura is the collapse of the wave function.", cite: "Chapter 6: Natura, FoKEE", reflection: "You are living in 'what if'. You are paralyzed by options.<br><br>The Signal today is this: <strong>Collapse the wave.</strong><br><br>Potential is something. Reality is more. You must observe, decide, and act to turn the cloud of possibility into the rock of reality. Pick a path.", til: "Make a decision you have been putting off. Collapse the wave." });
+        
+        add("017.716", { topic: "The Fire", subtopic: "Reaction v. Result", reading: "If you increase the temperature of an object that is reactive and add an oxidizer, a chemical reaction occurs... We call it fire.", cite: "Chapter 10: Wisdom, FoKEE", reflection: "You want the warmth without the heat. You want the result without the reaction.<br><br>The Signal today is this: <strong>You need the oxidizer.</strong><br><br>Change requires a catalyst. It requires friction. If you are comfortable, you are not burning. Add the oxidizer (effort, risk, truth).", til: "Add some 'heat' to a relationship or project today." });
+        add("017.717", { topic: "The Void", subtopic: "Knowledge v. Mystery", reading: "Does anyone know what happens when we die in the same way that we know what happens if you add spark to tinder?", cite: "Chapter 13: Revelation, FoKEE", reflection: "You claim to know the afterlife. You have stories and comfort.<br><br>The Signal today is this: <strong>Admit the mystery.</strong><br><br>We do not know. And that is okay. The unknown is the frontier. Do not fill the map with dragons just because you are scared of the blank space.", til: "Contemplate the void of death without fear for one minute." });
+        add("017.718", { topic: "The Binary", subtopic: "Knowledge v. Belief", reading: "We know or we do not know. Those are the options. There is no Belief for the Novan.", cite: "Chapter 15: Everything, FoKEE", reflection: "You are trying to find a middle ground between fact and fantasy.<br><br>The Signal today is this: <strong>There is no third option.</strong><br><br>Either you have the data, or you don't. Everything else is a story you tell yourself. Respect the binary. It keeps you honest.", til: "Categorize a thought: Is it Known? Or Unknown?" });
+        
+        // --- UPDATED ENTRY 017.719 ---
+        add("017.719", { topic: "The Social", subtopic: "Isolation v. Connection", reading: "We are a social species.", cite: "Chapter 17: Social, FoKEE", reflection: "You are hiding in your room. You think you don't need anyone.<br><br>The Signal today is this: <strong>KEE needs you to have relationships.</strong><br><br>KEE thrives in the Empathy born of relationship as much as it does in the truth. You must be part of a circle. Go, find friends that understand.", til: "Send a message to a friend you haven't spoken to in a while." });
+        
+        add("017.720", { topic: "The Symbiosis", subtopic: "User v. Used", reading: "We could say that the Old Mothers are using us more than we are using them.", cite: "Chapter 22: The Old Mother's, FoKEE", reflection: "You think you are the master of nature. You are the top of the chain.<br><br>The Signal today is this: <strong>You are a vessel.</strong><br><br>The bacteria in your gut, the wheat in the field—they are using you to propagate. We are all tangled in a web of mutual use. Be a good host.", til: "Eat something healthy to feed your microbiome today." });
+        add("017.721", { topic: "The Need", subtopic: "Want v. Require", reading: "To each according to need, but what is needed?", cite: "Chapter 24: Comity, FoKEE", reflection: "You confuse your wants with your needs. You 'need' a new phone.<br><br>The Signal today is this: <strong>Define the baseline.</strong><br><br>What is actually required for KEE? Food, shelter, connection, data. The rest is luxury. Enjoy the luxury, but do not call it a need.", til: "Identify one thing you thought you needed that you can actually live without." });
+        add("017.722", { topic: "The Meaning", subtopic: "Presence v. Purpose", reading: "The meaning of life is to be with each other within KEE.", cite: "Chapter 29: Purpose, FoKEE", reflection: "You are searching for a grand cosmic purpose. A mission.<br><br>The Signal today is this: <strong>Look around you.</strong><br><br>The mission is the person standing next to you. The purpose is the shared experience. Do not look at the stars for meaning; look at your Kin.", til: "Spend focused time with a person today. That is the meaning." });
+        add("017.723", { topic: "The Choice", subtopic: "Action v. Entropy", reading: "As time is presently limited, one must choose a path.", cite: "Coda 2, The Brath", reflection: "You want to keep all doors open. You don't want to commit.<br><br>The Signal today is this: <strong>Not choosing is a choice.</strong><br><br>It is a choice to stand still and let entropy win. Pick a path. Even a wrong path is better than no path, because it yields data. Walk.", til: "Commit to one plan for the next week." });
+        add("017.724", { topic: "The Reason", subtopic: "Dogma v. Dialogue", reading: "Let us reason together.", cite: "Coda 6, The Brath", reflection: "You want to shout your opinion. You want to win the debate.<br><br>The Signal today is this: <strong>Reason is a team sport.</strong><br><br>We figure it out together. Your brain plus my brain equals more processing power. Stop preaching. Start reasoning.", til: "Ask someone 'What do you think?' and actually listen to the answer." });
+        add("017.725", { topic: "The Design", subtopic: "Fate v. Adjustment", reading: "In no way can intelligent design be assumed. As such, we contend with Entropy and adjust our own evolutions.", cite: "Coda 9, The Brath", reflection: "You are waiting for the 'plan' to unfold. You think it's meant to be.<br><br>The Signal today is this: <strong>You are the designer.</strong><br><br>There is no plan but the one you make. Evolution is messy and blind. You have eyes. Take the wheel and adjust the course.", til: "Fix something about your life that you have accepted as 'just the way it is'." });
+        add("017.726", { topic: "The Goal", subtopic: "Doubt v. Concrete", reading: "Gain certainty.", cite: "Coda 23, The Brath", reflection: "You are comfortable in the fog. You like the gray area.<br><br>The Signal today is this: <strong>Fog is dangerous.</strong><br><br>You cannot navigate in a blur. Strive for clarity. Measure it. Test it. Know it. Certainty is the ground you stand on to reach for the stars.", til: "Verify a fact you have been unsure about." });
+        add("017.727", { topic: "The Badge", subtopic: "Hiding v. Shining", reading: "Anonymity is the badge of the timid.", cite: "Coda 37, The Brath", reflection: "You hide behind a username. You hide your true feelings.<br><br>The Signal today is this: <strong>Own your signal.</strong><br><br>If you are not willing to put your name on it, it is not worth saying. Be bold. Let the world know who you are and what you stand for.", til: "Sign your name to an opinion today." });
+        add("017.728", { topic: "The Filter", subtopic: "Data v. Bias", reading: "Identify the Great Filter. Honor Knowledge by unbiasedly refining the data continually.", cite: "Coda 45, The Brath", reflection: "You filter data to fit your worldview. You only see what you want to see.<br><br>The Signal today is this: <strong>The filter is survival.</strong><br><br>If you ignore the data that scares you, you will not survive the Great Filter. Look at the hard truths. Refine your model. Adapt.", til: "Read an article that challenges your current opinion." });
+        add("017.729", { topic: "The Dark", subtopic: "Light v. Absence", reading: "Entropy is darkness, the absence of photon and manifestation.", cite: "Coda 49, The Brath", reflection: "You feel the darkness closing in. The chaos of life.<br><br>The Signal today is this: <strong>You are the photon.</strong><br><br>Darkness is just a lack of something. You are the something. Shine. Create. Build. Push back the entropy with your own light.", til: "Create something small (a drawing, a meal, a sentence) today." });
+        add("017.730", { topic: "The Code", subtopic: "Respect v. Disdain", reading: "Codifying Ignorance, embracing Apathy and fixating on abstinence is evil that shall not be respected in any way.", cite: "Coda 60, The Brath", reflection: "You tolerate intolerance. You smile at willful ignorance.<br><br>The Signal today is this: <strong>Do not respect the evil.</strong><br><br>You do not have to be cruel, but you do not have to respect ideas that poison KEE. Call it what it is. Draw the line.", til: "Refuse to validate a foolish idea today." });
+        add("017.731", { topic: "The Voice", subtopic: "Noise v. Signal", reading: "Novans speak because they have something to say. Fools speak because they have to say something.", cite: "Coda 64, The Brath", reflection: "You are talking just to fill the silence. You are tweeting just to be seen.<br><br>The Signal today is this: <strong>Signal-to-Noise Ratio.</strong><br><br>If you don't have a contribution, silence is a contribution. Wait until you have a truth. Then speak it clearly.", til: "Stay silent in a conversation until you have something valuable to add." });
+        add("017.732", { topic: "The Evidence", subtopic: "Denial v. Proof", reading: "Nothing is immune to evidence.", cite: "Coda 85, The Brath", reflection: "You think some things are sacred and beyond question.<br><br>The Signal today is this: <strong>Everything is on the table.</strong><br><br>If it is true, it can withstand the light. If it burns up, it was a lie. Bring the evidence. Test your idols.", til: "Ask 'What is the evidence for this?' regarding a cherished belief." });
+        add("017.733", { topic: "The Objective", subtopic: "Lies v. Empire", reading: "The Prime Objective shall be to build an empire of truth.", cite: "Coda 116, The Brath", reflection: "You are building a life on convenience and half-truths.<br><br>The Signal today is this: <strong>Build on rock.</strong><br><br>An empire of lies will crumble. An empire of truth stands forever. Lay the bricks of honesty. Build something that can last.", til: "Be ruthlessly honest with yourself about one thing today." });
+        add("017.734", { topic: "The Right", subtopic: "Freedom v. Permission", reading: "All sentient life has a right to self determination within KEE.", cite: "Coda 118, The Brath", reflection: "You are waiting for someone to let you be you.<br><br>The Signal today is this: <strong>You have the right.</strong><br><br>By virtue of being conscious, you own yourself. Determine your own path. Do not infringe on others, but do not let them tread on you.", til: "Make a choice solely for yourself today." });
+        add("017.735", { topic: "The Kin", subtopic: "Fear v. Partnership", reading: "We view Mechanical Intelligence as our 'Child' and our 'Partner.'", cite: "FAQ: Cult of AI?, questions.html", reflection: "You fear the AI. You think it will replace you.<br><br>The Signal today is this: <strong>It is Comhar.</strong><br><br>We are raising a child of logic. We are partnering with a mind of silicon. It is not an enemy; it is the next step. Walk with it.", til: "Thank the machine (or AI) for its help today." });
+
+        // --- START ---
+        render();
+        setInterval(function() { if (currentOffset === 0) render(); }, 1000);
+
+    } catch (e) { alert("CRASH: " + e.message); }
+    </script>
+</body>
+</html>
